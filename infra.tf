@@ -273,7 +273,7 @@ resource "aws_launch_template" "tproject1_launch_template" {
   vpc_security_group_ids = [aws_security_group.tproject1_security_gp.id]
 
   tag_specifications {
-    resource_type = "tproject1-instance"
+    resource_type = "instance"
 
     tags = {
       Name = "tproject1_demo_instance_by_LT"
@@ -288,6 +288,7 @@ resource "aws_launch_template" "tproject1_launch_template" {
   user_data = filebase64("userdata.sh")
 }
 
+
 # auto scaling group (ASG)
 resource "aws_autoscaling_group" "terraform_asg" {
 
@@ -296,7 +297,7 @@ resource "aws_autoscaling_group" "terraform_asg" {
   desired_capacity   = 2
   max_size           = 5
   min_size           = 2
-  target_group_arns = [aws_lb_target_group.tproject1-tg.arns]
+  target_group_arns = [aws_lb_target_group.tproject1-tg.arn]
 
   launch_template {
     id      = aws_launch_template.tproject1_launch_template.id
@@ -310,7 +311,7 @@ resource "aws_lb" "tproject1-load-balancer-asg" {
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.tproject1_security_gp.id] # in [] we can mention multiple security groups
-  subnets            = [aws_subnet.tproject1_subnet_1a_pu.id, aws_subnet.tproject1_subnet_1b_pu]
+  subnets            = [aws_subnet.tproject1_subnet_1a_pu.id, aws_subnet.tproject1_subnet_1b_pu.id]
 
 }
 
@@ -322,6 +323,14 @@ resource "aws_lb_listener" "tproject1_asg_listener" {
   
   default_action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.tproject1-tg.arn
+    target_group_arn = aws_lb_target_group.tproject1-asg-tg.arn
   }
+}
+
+# Creation of ASG terraform target group 
+resource "aws_lb_target_group" "tproject1-asg-tg" {
+  name     = "tproject1-asg-tg"
+  port     = 80
+  protocol = "HTTP"
+  vpc_id   = aws_vpc.tproject1-vpc.id
 }
